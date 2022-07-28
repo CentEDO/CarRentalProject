@@ -28,7 +28,14 @@ namespace Business.Concrete
             }
             return new SuccessDataResult<List<Car>>(_carDal.GetAll(), Messages.CarsListed);
         }
-
+        public IDataResult<List<Car>> GetById(int id)
+        {
+            if (DateTime.Now.Hour == 20)
+            {
+                return new ErrorDataResult<List<Car>>(_carDal.GetAll(), Messages.MaintenanceTime);
+            }
+            return new SuccessDataResult<List<Car>>(_carDal.GetAll(c=>c.Id==id), Messages.CarsListed);
+        }
         public IDataResult<List<Car>> GetCarsByBrandId(int id)
         {
             return new SuccessDataResult<List<Car>>(_carDal.GetAll(c => c.BrandId == id));

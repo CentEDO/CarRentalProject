@@ -20,6 +20,7 @@ namespace Business.Concrete
             {
                 return new ErrorResult(Messages.UserNameInvalid);
             }
+            _customerDal.Add(customer);
             return new SuccessResult(Messages.UserAdded);
         }
 
