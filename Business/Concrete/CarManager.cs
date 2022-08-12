@@ -4,6 +4,7 @@ using Business.ValidationRules.FluentValidation;
 using Core.Aspects.Autofac.Validation;
 using Core.CrossCuttingConcerns.Validation;
 using Core.Results;
+using Core.Utilities.Business;
 using DataAccess.Abstract;
 using Entities.Concrete;
 using Entities.DTOs;
@@ -19,9 +20,11 @@ namespace Business.Concrete
     public class CarManager : ICarService
     {
         ICarDal _carDal;
-        public CarManager(ICarDal carDal)
+        IBrandService _brandService;
+        public CarManager(ICarDal carDal, IBrandService brandService)
         {
             _carDal = carDal;
+            _brandService = brandService;
         }
 
         public IDataResult<List<Car>> GetAll()
@@ -61,6 +64,7 @@ namespace Business.Concrete
         [ValidationAspect(typeof(CarValidator))]
         public IResult Add(Car car)
         {
+            IResult result = BusinessRules.Run(CheckIfBrandLimitExceeded());
             _carDal.Add(car);
             return new SuccessResult(Messages.CarAdded);
         }
@@ -75,6 +79,16 @@ namespace Business.Concrete
         {
             _carDal.Update(car); ;
             return new SuccessResult(Messages.CarUpdated);
+        }
+
+        private IResult CheckIfBrandLimitExceeded()
+        {
+            var result = _brandService.GetAll();
+            if (result.Data.Count > 15)
+            {
+                return new ErrorResult(Messages.BrandLimitExceeded);
+            }
+            return new SuccessResult();
         }
     }
 }
