@@ -25,6 +25,7 @@ namespace Business.Concrete
             {
                 return new ErrorResult(Messages.UserNameInvalid);
             }
+            _userDal.Add(user);
             return new SuccessResult(Messages.UserAdded);
         }
 

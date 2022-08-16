@@ -1,6 +1,10 @@
 ﻿using Business.Abstract;
+using Business.BusinessAspects.Autofac;
 using Business.Constants;
 using Business.ValidationRules.FluentValidation;
+using Core.Aspects.Autofac.Caching;
+using Core.Aspects.Autofac.Performance;
+using Core.Aspects.Autofac.Transaction;
 using Core.Aspects.Autofac.Validation;
 using Core.CrossCuttingConcerns.Validation;
 using Core.Results;
@@ -27,6 +31,8 @@ namespace Business.Concrete
             _brandService = brandService;
         }
 
+        [CacheAspect]
+        [PerformanceAspect(5)]
         public IDataResult<List<Car>> GetAll()
         {
             if (DateTime.Now.Hour==20)
@@ -35,6 +41,9 @@ namespace Business.Concrete
             }
             return new SuccessDataResult<List<Car>>(_carDal.GetAll(), Messages.CarsListed);
         }
+
+        [CacheAspect]
+        [PerformanceAspect(5)]
         public IDataResult<List<Car>> GetById(int id)
         {
             if (DateTime.Now.Hour == 20)
@@ -61,8 +70,9 @@ namespace Business.Concrete
             return new SuccessDataResult<List<CarDetailDto>>(_carDal.GetCarDetails(),Messages.CarsListed);
         }
 
-        //[SecuredOperation("car.add,admin")]
+        [SecuredOperation("car.add,admin")]
         [ValidationAspect(typeof(CarValidator))]
+        [CacheRemoveAspect("IProductService.Get")]
         public IResult Add(Car car)
         {
             IResult result = BusinessRules.Run(CheckIfBrandLimitExceeded());
@@ -76,6 +86,8 @@ namespace Business.Concrete
             return new SuccessResult(Messages.CarDeleted);
         }
 
+        [ValidationAspect(typeof(CarValidator))]
+        [CacheRemoveAspect("IProductService.Get")]
         public IResult Update(Car car)
         {
             _carDal.Update(car); ;
@@ -90,6 +102,18 @@ namespace Business.Concrete
                 return new ErrorResult(Messages.BrandLimitExceeded);
             }
             return new SuccessResult();
+        }
+
+        [TransactionScopeAspect]
+        public IResult AddTransactionalTest(Car car)
+        {
+            Add(car);
+            if (car.DailyPrice < 50)
+            {
+                throw new Exception("");
+            }
+            Add(car);
+            return null;
         }
     }
 }
